@@ -3,7 +3,7 @@ import numpy as np
 
 # Sample format of the request data
 request_data = {
-    "size": {"x": 40, "y": 20},
+    "size": {"x": 20, "y": 20},
     "zoom_level": 1.0,
     "pixels_per_point": 2,
     "central_point": {"x": 0.0, "y": 0.0},
@@ -127,9 +127,10 @@ def main_loop(
             x_idx_start, x_idx_end = x_idx, x_idx + pixels_per_point
             mandelbrot_iters = complex_num_check(current_point, max_iterations, limit)
             data_table[y_idx_start:y_idx_end, x_idx_start:x_idx_end] = mandelbrot_iters
-            # print(current_point)
+            print(y_idx, x_idx, current_point)
             # change the current point to the next target for calculation
-            current_point += complex(increment_real, increment_imag)
+            current_point += complex(0, increment_imag)
+        current_point += complex(plane_limits["x_min"], increment_imag)
 
     return data_table
 
