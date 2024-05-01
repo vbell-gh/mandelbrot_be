@@ -5,7 +5,7 @@ import numpy as np
 request_data = {
     "size": {"x": 20, "y": 20},
     "zoom_level": 1.0,
-    "pixels_per_point": 2,
+    "pixels_per_point": 1,
     "central_point": {"x": 0.0, "y": 0.0},
 }
 
@@ -112,11 +112,20 @@ def main_loop(
 ) -> np.array:
     # THIS IS NOT RIGHT
     plane_limits = xlim_ylim_rescale(resolution, zoom_level, central_point)
-    increment_real = (plane_limits["x_max"] - plane_limits["x_min"]) / resolution[0]
-    increment_imag = (plane_limits["y_max"] - plane_limits["y_min"]) / resolution[1]
+    increment_real = (
+        (plane_limits["x_max"] - plane_limits["x_min"])
+        / resolution[0]
+        * pixels_per_point
+    )
+    increment_imag = (
+        (plane_limits["y_max"] - plane_limits["y_min"])
+        / resolution[1]
+        * pixels_per_point
+    )
     print(increment_real, increment_imag)
     current_point = complex(plane_limits["x_min"], plane_limits["y_min"])
-    # each row represents a row of numbers where the step is the pixels_per_point
+
+    # each row represents a row of real numbers in the complex plane
     for y_idx in range(0, len(data_table), pixels_per_point):
         # each item in each row represents a point in the complex plane, skipping each step
         for x_idx in range(0, len(data_table[0]), pixels_per_point):
@@ -127,10 +136,9 @@ def main_loop(
             x_idx_start, x_idx_end = x_idx, x_idx + pixels_per_point
             mandelbrot_iters = complex_num_check(current_point, max_iterations, limit)
             data_table[y_idx_start:y_idx_end, x_idx_start:x_idx_end] = mandelbrot_iters
-            print(y_idx, x_idx, current_point)
             # change the current point to the next target for calculation
-            current_point += complex(0, increment_imag)
-        current_point += complex(plane_limits["x_min"], increment_imag)
+            current_point += complex(increment_real, 0)
+        current_point = complex(plane_limits["x_min"], plane_limits["y_min"] + (increment_imag * y_idx_end)/pixels_per_point)
 
     return data_table
 
@@ -145,5 +153,5 @@ if __name__ == "__main__":
         limit=ITERATION_LIMIT,
         zoom_level=ZOOM_LEVEL,
     )
-    # print(output)
+    print(output)
     print("Sum:", np.sum(output))
