@@ -2,7 +2,23 @@ import numpy as np
 
 
 class Mandelbrot:
-    
+    """
+    Represents the Mandelbrot set.
+
+    ## Methods
+
+    z(zn, c):
+        Calculate the next value in the Mandelbrot sequence.
+    generate_series_c(c):
+        Generates a series of complex numbers based on the Mandelbrot set algorithm.
+    c_num_check(c_point):
+        Check if the given complex number c_point belongs to the Mandelbrot set.
+    xlim_ylim_rescale():
+        Rescales the x and y limits of the plane based on the aspect ratio and zoom level.
+    main_loop():
+        Perform the main loop to calculate the Mandelbrot set.
+    """
+
     def __init__(
         self,
         size: dict,
@@ -12,6 +28,17 @@ class Mandelbrot:
         max_iterations=200,
         iteration_limit=2,
     ):
+        """
+        Initialize the Mandelbrot class.
+
+        Args:
+            size (dict): A dictionary containing the size of the Mandelbrot image in pixels.
+            zoom_level (float): The zoom level of the Mandelbrot image.
+            pixels_per_point (int): The number of pixels per point in the Mandelbrot image.
+            central_point (dict): A dictionary containing the coordinates of the central point of the Mandelbrot image.
+            max_iterations (int, optional): The maximum number of iterations to compute for each point. Defaults to 200.
+            iteration_limit (int, optional): The iteration limit for determining if a point is in the Mandelbrot set. Defaults to 2.
+        """
         self.resolution = (size["x"], size["y"])
         self.pixel_pp = pixels_per_point
         self.zoom = zoom_level
