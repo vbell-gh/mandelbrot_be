@@ -48,9 +48,7 @@ def get_mandelbrot(data: MandelSchema):
             zoom_level=data.zoom_level,
             pixels_per_point=data.pixel_per_point,
             central_point=data.central_point,
-            max_iterations=data.max_iter,
-            iteration_limit=data.iteration_limit,
-        )
+            )
         data_set = mandebrot.main_loop()
         return {"data_set": data_set}
     except Exception as e:

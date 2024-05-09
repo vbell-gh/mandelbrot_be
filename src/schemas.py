@@ -17,5 +17,5 @@ class MandelSchema(BaseModel):
     central_point: XYpointFloat
     max_iter: int
     iteration_limit: int
-    max_iter: Optional[int] = None
-    iteration_limit: Optional[int] = None
+    max_iter: int = 200
+    iteration_limit: int = 2

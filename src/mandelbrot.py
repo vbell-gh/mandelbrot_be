@@ -21,12 +21,7 @@ class Mandelbrot:
 
     def __init__(
         self,
-        size: dict,
-        zoom_level: float,
-        pixels_per_point: int,
-        central_point: dict,
-        max_iterations=200,
-        iteration_limit=2,
+        request_data:MandelSchema
     ):
         """
         Initialize the Mandelbrot class.
@@ -39,13 +34,13 @@ class Mandelbrot:
             max_iterations (int, optional): The maximum number of iterations to compute for each point. Defaults to 200.
             iteration_limit (int, optional): The iteration limit for determining if a point is in the Mandelbrot set. Defaults to 2.
         """
-        self.resolution = (size["x"], size["y"])
-        self.pixel_pp = pixels_per_point
-        self.zoom = zoom_level
-        self.central_point = complex(central_point["x"], central_point["y"])
+        self.resolution = (request_data.size.x, request_data.size.y)
+        self.pixel_pp = request_data.pixel_per_point
+        self.zoom = request_data.pixel_per_point
+        self.central_point = complex(request_data.central_point.x, request_data.central_point.y)
 
-        self.max_iterations = max_iterations
-        self.iteration_limit = iteration_limit
+        self.max_iterations = request_data.max_iter
+        self.iteration_limit = request_data.iteration_limit
 
         self.data_table = np.zeros((self.resolution[0], self.resolution[1]))
 
@@ -176,17 +171,17 @@ class Mandelbrot:
 
 
 if __name__ == "__main__":
-    request_data = {
-        "size": {"x": 10, "y": 10},
-        "zoom_level": 4.0,
-        "pixels_per_point": 1,
-        "central_point": {"x": 0.0, "y": 0.0},
-    }
+    sample_request_data = MandelSchema(
+        size=XYpointInt(x=10, y=10),
+        zoom_level=4.0,
+        pixel_per_point=1,
+        central_point=XYpointFloat(x=0.0, y=0.0),
+        max_iter=200,
+        iteration_limit=2
+    )
+
     mdlbrd = Mandelbrot(
-        size=request_data["size"],
-        zoom_level=request_data["zoom_level"],
-        pixels_per_point=request_data["pixels_per_point"],
-        central_point=request_data["central_point"],
+        request_data=sample_request_data
     )
     output = mdlbrd.main_loop()
     print(output)
