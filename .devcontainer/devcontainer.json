@@ -2,7 +2,7 @@
     "name": "mandelbrot_be",
     "image": "mcr.microsoft.com/devcontainers/python:3.12",
     "postCreateCommand": "pip install fastapi uvicorn numpy black",
-    "postStartCommand": "uvicorn main:app --reload --port 5000",
+    "postStartCommand": "uvicorn main:app --reload --port 5000 --log-level debug",
     "forwardPorts": [
         5000
     ],

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 from src.schemas import MandelSchema
 from src.mandelbrot import Mandelbrot
@@ -41,15 +42,15 @@ def test_arr():
 
 
 @app.post("/get_mandelbrot")
-def get_mandelbrot(data: MandelSchema):
-    try:
-        mandebrot = Mandelbrot(
-            size=data.size,
-            zoom_level=data.zoom_level,
-            pixels_per_point=data.pixel_per_point,
-            central_point=data.central_point,
+def get_mandelbrot(request_data: MandelSchema):
+
+    try: 
+        mdlbrt = Mandelbrot(
+            request_data=request_data
             )
-        data_set = mandebrot.main_loop()
-        return {"data_set": data_set}
+        data_set = mdlbrt.main_loop()
+        data_list = data_set.tolist()
+        return {"mandel_set": data_list}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+

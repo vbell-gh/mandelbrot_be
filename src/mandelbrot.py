@@ -1,5 +1,5 @@
 import numpy as np
-from schemas import MandelSchema, XYpointFloat, XYpointInt
+from src.schemas import MandelSchema, XYpointFloat, XYpointInt
 
 class Mandelbrot:
     """
