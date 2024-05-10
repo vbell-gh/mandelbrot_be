@@ -45,10 +45,8 @@ def test_arr():
 def get_mandelbrot(request_data: MandelSchema):
 
     try: 
-        mdlbrt = Mandelbrot(
-            request_data=request_data
-            )
-        data_set = mdlbrt.main_loop()
+        mdlbrt = Mandelbrot()
+        data_set = mdlbrt.main_loop(request_data)
         data_list = data_set.tolist()
         return {"mandel_set": data_list}
     except Exception as e:

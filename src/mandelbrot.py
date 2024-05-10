@@ -3,21 +3,24 @@ from src.schemas import MandelSchema, XYpointFloat, XYpointInt
 
 
 class Mandelbrot:
+    """
+    A class used to generate and manipulate Mandelbrot sets.
 
+    Attributes:
+        `plane_default_limits` (dict): The default limits of the complex plane at zoom 1.
 
+    Methods:
+        `generate_series_c(c: complex, iterations:int)`: Generates a series of complex numbers based 
+                                                         on the Mandelbrot set algorithm.
+        `xlim_ylim_rescale(mdl_data: MandelSchema) -> dict`: Rescales the x and y limits of the plane 
+                                                             based on the aspect ratio and zoom level.
+        `main_loop(mdl_data: MandelSchema) -> np.array`: Perform the main loop to calculate the 
+                                                         Mandelbrot set.
+    """
     def __init__(self):
         """
-        Initialize the Mandelbrot class.
-
-        Args:
-            size (dict): A dictionary containing the size of the Mandelbrot image in pixels.
-            zoom_level (float): The zoom level of the Mandelbrot image.
-            pixels_per_point (int): The number of pixels per point in the Mandelbrot image.
-            central_point (dict): A dictionary containing the coordinates of the central point of the Mandelbrot image.
-            max_iterations (int, optional): The maximum number of iterations to compute for each point. Defaults to 200.
-            iteration_limit (int, optional): The iteration limit for determining if a point is in the Mandelbrot set. Defaults to 2.
+        Initializes the Mandelbrot set generator.
         """
-
         self.plane_default_limits = (
             {  # the default limits of the complex plane at zoom 1
                 "x_min": -2.5,
@@ -30,8 +33,11 @@ class Mandelbrot:
     def generate_series_c(self, c: complex, iterations:int):
         """
         Generates a series of complex numbers based on the Mandelbrot set algorithm.
+
         Args:
-            c (complex): The complex number for which the series is generated.
+            `c` (complex): The complex number for which the series is generated.
+            `iterations` (int): The number of iterations to perform.
+
         Returns:
             list: A list of complex numbers representing the generated series.
         """
@@ -45,8 +51,13 @@ class Mandelbrot:
     def xlim_ylim_rescale(self, mdl_data: MandelSchema) -> dict:
         """
         Rescales the x and y limits of the plane based on the aspect ratio and zoom level.
+
+        Args:
+            `mdl_data` (MandelSchema): An object containing parameters for the Mandelbrot set calculation.
+
         Returns:
-            dict: A dictionary containing the rescaled x and y limits of the plane.
+            dict: A dictionary containing the rescaled x and y limits of the plane. The keys are 'x_min', 
+                  'x_max', 'y_min', and 'y_max'.
         """
         aspect_ratio = mdl_data.size.x / mdl_data.size.y
         plane_limits = self.plane_default_limits.copy()
@@ -82,8 +93,21 @@ class Mandelbrot:
     def main_loop(self, mdl_data: MandelSchema) -> np.array:
         """
         Perform the main loop to calculate the Mandelbrot set.
+
+        This function generates a grid of complex numbers representing points in the complex plane, 
+        and then iteratively applies the Mandelbrot function to each point. The number of iterations 
+        it takes for each point to escape the Mandelbrot set is recorded in a count grid.
+
+        The function takes as input a `MandelSchema` object, which contains parameters such as the 
+        size of the plane, the pixel density, the maximum number of iterations, and the iteration limit.
+
+        Args:
+            mdl_data (MandelSchema): An object containing parameters for the Mandelbrot set calculation.
+
         Returns:
-            np.array: The data table containing the number of iterations for each point in the complex plane.
+            np.array: A 2D numpy array containing the number of iterations it took for each point in 
+                    the complex plane to escape the Mandelbrot set. Points that did not escape within 
+                    the maximum number of iterations are marked with the maximum iteration count.
         """
         plane_limits = self.xlim_ylim_rescale(mdl_data)
 
