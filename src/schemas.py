@@ -15,7 +15,5 @@ class MandelSchema(BaseModel):
     zoom_level: float
     pixel_per_point: int
     central_point: XYpointFloat
-    max_iter: int
-    iteration_limit: int
     max_iter: int = 200
     iteration_limit: int = 2

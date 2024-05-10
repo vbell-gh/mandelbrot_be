@@ -1,28 +1,11 @@
 import numpy as np
 from src.schemas import MandelSchema, XYpointFloat, XYpointInt
 
+
 class Mandelbrot:
-    """
-    Represents the Mandelbrot set.
 
-    ## Methods
 
-    z(zn, c):
-        Calculate the next value in the Mandelbrot sequence.
-    generate_series_c(c):
-        Generates a series of complex numbers based on the Mandelbrot set algorithm.
-    c_num_check(c_point):
-        Check if the given complex number c_point belongs to the Mandelbrot set.
-    xlim_ylim_rescale():
-        Rescales the x and y limits of the plane based on the aspect ratio and zoom level.
-    main_loop():
-        Perform the main loop to calculate the Mandelbrot set.
-    """
-
-    def __init__(
-        self,
-        request_data:MandelSchema
-    ):
+    def __init__(self):
         """
         Initialize the Mandelbrot class.
 
@@ -34,34 +17,17 @@ class Mandelbrot:
             max_iterations (int, optional): The maximum number of iterations to compute for each point. Defaults to 200.
             iteration_limit (int, optional): The iteration limit for determining if a point is in the Mandelbrot set. Defaults to 2.
         """
-        self.resolution = (request_data.size.x, request_data.size.y)
-        self.pixel_pp = request_data.pixel_per_point
-        self.zoom = request_data.zoom_level
-        self.central_point = complex(request_data.central_point.x, request_data.central_point.y)
 
-        self.max_iterations = request_data.max_iter
-        self.iteration_limit = request_data.iteration_limit
+        self.plane_default_limits = (
+            {  # the default limits of the complex plane at zoom 1
+                "x_min": -2.5,
+                "x_max": 2.5,
+                "y_min": -2.5,
+                "y_max": 2.5,
+            }
+        )
 
-        self.data_table = np.zeros((self.resolution[0], self.resolution[1]))
-
-        self.plane_default_limits = {  # the default limits of the complex plane at zoom 1
-            "x_min": -2.5,
-            "x_max": 2.5,
-            "y_min": -2.5,
-            "y_max": 2.5,
-        }
-
-    def z(self, zn, c):
-        """Calculate the next value in the Mandelbrot sequence.
-        Args:
-            zn (complex): The current value in the sequence.
-            c (complex): The constant value.
-        Returns:
-            complex: The next value in the sequence.
-        """
-        return zn**2 + c
-
-    def generate_series_c(self, c: complex):
+    def generate_series_c(self, c: complex, iterations:int):
         """
         Generates a series of complex numbers based on the Mandelbrot set algorithm.
         Args:
@@ -71,118 +37,111 @@ class Mandelbrot:
         """
         series = []
         zn = 0
-        for _ in range(self.max_iterations):
-            zn = self.z(zn, c)
+        for _ in range(iterations):
+            zn = zn ** 2 + c
             series.append(zn)
         return series
 
-    def c_num_check(self, c_point: complex):
-        """
-        Check if the given complex number c_point belongs to the Mandelbrot set.
-        Parameters:
-        - c_point (complex): The complex number to be checked.
-        Returns:
-        - int: The number of iterations required to determine if c_point belongs to the Mandelbrot set.
-               If the number of iterations exceeds the maximum iterations, returns the maximum iterations.
-        """
-        zn = 0
-        for i in range(self.max_iterations):
-            zn = self.z(zn, c_point)
-            if abs(zn) > self.iteration_limit:
-                return i
-        return self.max_iterations
-
-    def xlim_ylim_rescale(self) -> dict:
+    def xlim_ylim_rescale(self, mdl_data: MandelSchema) -> dict:
         """
         Rescales the x and y limits of the plane based on the aspect ratio and zoom level.
         Returns:
             dict: A dictionary containing the rescaled x and y limits of the plane.
         """
-        aspect_ratio = self.resolution[0] / self.resolution[1]
-
+        aspect_ratio = mdl_data.size.x / mdl_data.size.y
         plane_limits = self.plane_default_limits.copy()
 
         for key in plane_limits:
             if key.startswith("x") and aspect_ratio < 1:
                 plane_limits[key] = (
-                    (self.plane_default_limits[key] + self.central_point.real)
+                    (self.plane_default_limits[key] + mdl_data.central_point.x)
                     * aspect_ratio
-                    / self.zoom
+                    / mdl_data.zoom_level
                 )
                 continue
             elif key.startswith("x") and aspect_ratio >= 1:
                 plane_limits[key] = (
-                    self.plane_default_limits[key] + self.central_point.real
-                ) / self.zoom
+                    self.plane_default_limits[key] + mdl_data.central_point.x
+                ) /mdl_data.zoom_level
 
                 continue
             elif key.startswith("y") and aspect_ratio > 1:
                 plane_limits[key] = (
-                    (self.plane_default_limits[key] + self.central_point.real)
+                    (self.plane_default_limits[key] + mdl_data.central_point.y)
                     / aspect_ratio
-                    / self.zoom
+                    / mdl_data.zoom_level
                 )
                 continue
             elif key.startswith("y") and aspect_ratio <= 1:
                 plane_limits[key] = (
-                    self.plane_default_limits[key] + self.central_point.real
-                ) / self.zoom
+                    self.plane_default_limits[key] + mdl_data.central_point.y
+                ) / mdl_data.zoom_level
                 continue
         return plane_limits
 
-    def main_loop(self) -> np.array:
+    def main_loop(self, mdl_data: MandelSchema) -> np.array:
         """
         Perform the main loop to calculate the Mandelbrot set.
         Returns:
             np.array: The data table containing the number of iterations for each point in the complex plane.
         """
-        plane_limits = self.xlim_ylim_rescale()
-        increment_real = (
-            (plane_limits["x_max"] - plane_limits["x_min"])
-            / self.resolution[0]
-            * self.pixel_pp
-        )
-        increment_imag = (
-            (plane_limits["y_max"] - plane_limits["y_min"])
-            / self.resolution[1]
-            * self.pixel_pp
-        )
-        current_point = complex(plane_limits["x_min"], plane_limits["y_min"])
+        plane_limits = self.xlim_ylim_rescale(mdl_data)
 
-        # each row represents a row of real numbers in the complex plane
-        for y_idx in range(0, len(self.data_table), self.pixel_pp):
-            # each item in each row represents a point in the complex plane, skipping each step
-            for x_idx in range(0, len(self.data_table[0]), self.pixel_pp):
-                # calculate the number of iterations for each point, where the step is the pixels_per_point
-                # store it in the data table, but amend based on the pixels_per_point
+        # Calc the sizes of the x and y axes
+        x_size = mdl_data.size.x // mdl_data.pixel_per_point
+        y_size = mdl_data.size.y // mdl_data.pixel_per_point
+        # Generate the main X and y lines
+        x_line = np.linspace(
+            plane_limits["x_min"], plane_limits["x_max"], x_size, endpoint=False
+        )
+        y_line = np.linspace(
+            plane_limits["y_max"], plane_limits["y_min"], y_size, endpoint=False
+        )  # y is inverted, as the y starts from positive to negative
+        complex_grid = np.zeros(
+            (y_size, x_size), dtype=complex
+        )  # Create an empty complex grid
+        x_real, y_imag = np.meshgrid(
+            x_line, y_line
+        )  # Create the meshgrid in order to fill in the complex grid
+        complex_grid.real = x_real
+        complex_grid.imag = y_imag
 
-                y_idx_s, y_idx_e = y_idx, y_idx + self.pixel_pp
-                x_idx_s, x_idx_e = x_idx, x_idx + self.pixel_pp
-                mandelbrot_iters = self.c_num_check(current_point)
-                self.data_table[y_idx_s:y_idx_e, x_idx_s:x_idx_e] = mandelbrot_iters
-                # change the current point to the next target for calculation
-                current_point += complex(increment_real, 0)
-            current_point = complex(
-                plane_limits["x_min"],
-                plane_limits["y_min"] + (increment_imag * y_idx_e) / self.pixel_pp,
+        mask_grid = np.ones_like(
+            complex_grid, dtype=bool
+        )  # Create a mask grid of the complex plane to follow which elements to do the calculations
+        count_grid = np.zeros_like(
+            complex_grid, dtype=int
+        )  # Keeps count of the operations
+        z_grid = np.zeros_like(
+            complex_grid
+        )  # Z Grid to keep the values of the complex numbers
+
+        # The main loop
+        for _ in range(mdl_data.max_iter):
+            z_grid[mask_grid] = z_grid[mask_grid] ** 2 + complex_grid[mask_grid]
+            mask_grid = np.logical_and(
+                mask_grid, np.abs(z_grid) <= mdl_data.iteration_limit
             )
+            count_grid += mask_grid
 
-        return self.data_table
+        return count_grid
 
 
 if __name__ == "__main__":
+    import timeit
     sample_request_data = MandelSchema(
-        size=XYpointInt(x=10, y=10),
-        zoom_level=4.0,
+        size=XYpointInt(x=3000, y=2000),
+        zoom_level=1,
         pixel_per_point=1,
         central_point=XYpointFloat(x=0.0, y=0.0),
         max_iter=200,
-        iteration_limit=2
+        iteration_limit=2,
     )
 
-    mdlbrd = Mandelbrot(
-        request_data=sample_request_data
-    )
-    output = mdlbrd.main_loop()
-    print(output)
-    print("Sum:", np.sum(output))
+    mdlbrd = Mandelbrot()
+    start_time = timeit.default_timer()
+    output = mdlbrd.main_loop(mdl_data=sample_request_data)
+    end_time = timeit.default_timer()
+    # print(output)
+    # print("Sum:", np.sum(output))
+    print(f"The main loop took {end_time-start_time}.")
