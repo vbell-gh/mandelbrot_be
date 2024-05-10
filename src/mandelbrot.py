@@ -154,11 +154,11 @@ class Mandelbrot:
 if __name__ == "__main__":
     import timeit
     sample_request_data = MandelSchema(
-        size=XYpointInt(x=3000, y=2000),
-        zoom_level=1,
+        size=XYpointInt(x=300, y=300),
+        zoom_level=2.2,
         pixel_per_point=1,
-        central_point=XYpointFloat(x=0.0, y=0.0),
-        max_iter=200,
+        central_point=XYpointFloat(x=0.0, y=1.0),
+        max_iter=250,
         iteration_limit=2,
     )
 
@@ -166,6 +166,6 @@ if __name__ == "__main__":
     start_time = timeit.default_timer()
     output = mdlbrd.main_loop(mdl_data=sample_request_data)
     end_time = timeit.default_timer()
-    # print(output)
-    # print("Sum:", np.sum(output))
+    print(output)
+    print("Sum:", np.sum(output))
     print(f"The main loop took {end_time-start_time}.")
