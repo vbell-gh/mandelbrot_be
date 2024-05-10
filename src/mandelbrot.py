@@ -36,7 +36,7 @@ class Mandelbrot:
         """
         self.resolution = (request_data.size.x, request_data.size.y)
         self.pixel_pp = request_data.pixel_per_point
-        self.zoom = request_data.pixel_per_point
+        self.zoom = request_data.zoom_level
         self.central_point = complex(request_data.central_point.x, request_data.central_point.y)
 
         self.max_iterations = request_data.max_iter
