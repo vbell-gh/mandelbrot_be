@@ -46,8 +46,17 @@ def get_mandelbrot(request_data: MandelSchema):
 
     try:
         mdlbrt = Mandelbrot()
-        data_set = mdlbrt.main_loop(request_data)
-        data_list = data_set.tolist()
-        return {"mandel_set": data_list}
+        count_grid, complex_grid, color_dic = mdlbrt.main_loop(request_data)
+        count_grid_list = count_grid.tolist()
+        complex_grid = {
+            "real": complex_grid.real.tolist(),
+            "imag": complex_grid.imag.tolist(),
+        }
+
+        return {
+            "count_grid": count_grid_list,
+            "complex_grid": complex_grid,
+            "color": color_dic,
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

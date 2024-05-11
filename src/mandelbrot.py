@@ -10,13 +10,14 @@ class Mandelbrot:
         `plane_default_limits` (dict): The default limits of the complex plane at zoom 1.
 
     Methods:
-        `generate_series_c(c: complex, iterations:int)`: Generates a series of complex numbers based 
+        `generate_series_c(c: complex, iterations:int)`: Generates a series of complex numbers based
                                                          on the Mandelbrot set algorithm.
-        `xlim_ylim_rescale(mdl_data: MandelSchema) -> dict`: Rescales the x and y limits of the plane 
+        `xlim_ylim_rescale(mdl_data: MandelSchema) -> dict`: Rescales the x and y limits of the plane
                                                              based on the aspect ratio and zoom level.
-        `main_loop(mdl_data: MandelSchema) -> np.array`: Perform the main loop to calculate the 
+        `main_loop(mdl_data: MandelSchema) -> np.array`: Perform the main loop to calculate the
                                                          Mandelbrot set.
     """
+
     def __init__(self):
         """
         Initializes the Mandelbrot set generator.
@@ -30,7 +31,7 @@ class Mandelbrot:
             }
         )
 
-    def generate_series_c(self, c: complex, iterations:int):
+    def generate_series_c(self, c: complex, iterations: int):
         """
         Generates a series of complex numbers based on the Mandelbrot set algorithm.
 
@@ -44,7 +45,7 @@ class Mandelbrot:
         series = []
         zn = 0
         for _ in range(iterations):
-            zn = zn ** 2 + c
+            zn = zn**2 + c
             series.append(zn)
         return series
 
@@ -56,7 +57,7 @@ class Mandelbrot:
             `mdl_data` (MandelSchema): An object containing parameters for the Mandelbrot set calculation.
 
         Returns:
-            dict: A dictionary containing the rescaled x and y limits of the plane. The keys are 'x_min', 
+            dict: A dictionary containing the rescaled x and y limits of the plane. The keys are 'x_min',
                   'x_max', 'y_min', and 'y_max'.
         """
         aspect_ratio = mdl_data.size.x / mdl_data.size.y
@@ -73,7 +74,7 @@ class Mandelbrot:
             elif key.startswith("x") and aspect_ratio >= 1:
                 plane_limits[key] = (
                     self.plane_default_limits[key] + mdl_data.central_point.x
-                ) /mdl_data.zoom_level
+                ) / mdl_data.zoom_level
 
                 continue
             elif key.startswith("y") and aspect_ratio > 1:
@@ -90,23 +91,47 @@ class Mandelbrot:
                 continue
         return plane_limits
 
+    def colorize(
+        self, count_grid: np.array, max_iter: int, pixel_pp: int
+    ) -> dict[np.array]:
+        """
+        Colorizes the Mandelbrot set based on the number of iterations it took for each point to escape.
+
+        Args:
+            count_grid (np.array): A 2D numpy array containing the number of iterations it took for each
+                                   point in the complex plane to escape the Mandelbrot set.
+
+        Returns:
+           dictionarry with lists
+        """
+        color_max, color_min = 255, 0
+        max_iter_grid = np.full_like(count_grid, max_iter)
+        colors_dic = {}
+        np_red = count_grid / max_iter_grid * color_max
+        np_green = (np.sin(count_grid) + 1) / 2 * 255
+        np_blue = np.full_like(count_grid, 100)
+        colors_dic["red"] = np_red.repeat(pixel_pp, axis=1).astype(int).tolist()
+        colors_dic["green"] = np_green.repeat(pixel_pp, axis=1).astype(int).tolist()
+        colors_dic["blue"] = np_blue.repeat(pixel_pp, axis=1).astype(int).tolist()
+        return colors_dic
+
     def main_loop(self, mdl_data: MandelSchema) -> np.array:
         """
         Perform the main loop to calculate the Mandelbrot set.
 
-        This function generates a grid of complex numbers representing points in the complex plane, 
-        and then iteratively applies the Mandelbrot function to each point. The number of iterations 
+        This function generates a grid of complex numbers representing points in the complex plane,
+        and then iteratively applies the Mandelbrot function to each point. The number of iterations
         it takes for each point to escape the Mandelbrot set is recorded in a count grid.
 
-        The function takes as input a `MandelSchema` object, which contains parameters such as the 
+        The function takes as input a `MandelSchema` object, which contains parameters such as the
         size of the plane, the pixel density, the maximum number of iterations, and the iteration limit.
 
         Args:
             mdl_data (MandelSchema): An object containing parameters for the Mandelbrot set calculation.
 
         Returns:
-            np.array: A 2D numpy array containing the number of iterations it took for each point in 
-                    the complex plane to escape the Mandelbrot set. Points that did not escape within 
+            np.array: A 2D numpy array containing the number of iterations it took for each point in
+                    the complex plane to escape the Mandelbrot set. Points that did not escape within
                     the maximum number of iterations are marked with the maximum iteration count.
         """
         plane_limits = self.xlim_ylim_rescale(mdl_data)
@@ -147,15 +172,23 @@ class Mandelbrot:
                 mask_grid, np.abs(z_grid) <= mdl_data.iteration_limit
             )
             count_grid += mask_grid
-
-        return count_grid
+        # implement np.repeat with pixel_per_point
+        color_dic = self.colorize(
+            count_grid, mdl_data.max_iter, mdl_data.pixel_per_point
+        )
+        return (
+            count_grid.repeat(mdl_data.pixel_per_point, axis=1),
+            complex_grid.repeat(mdl_data.pixel_per_point, axis=1),
+            color_dic,
+        )
 
 
 if __name__ == "__main__":
     import timeit
+
     sample_request_data = MandelSchema(
-        size=XYpointInt(x=300, y=300),
-        zoom_level=2.2,
+        size=XYpointInt(x=500, y=500),
+        zoom_level=1,
         pixel_per_point=1,
         central_point=XYpointFloat(x=0.0, y=1.0),
         max_iter=250,
@@ -164,8 +197,8 @@ if __name__ == "__main__":
 
     mdlbrd = Mandelbrot()
     start_time = timeit.default_timer()
-    output = mdlbrd.main_loop(mdl_data=sample_request_data)
+    count_grid, complex_grid, color_dic = mdlbrd.main_loop(mdl_data=sample_request_data)
     end_time = timeit.default_timer()
-    print(output)
-    print("Sum:", np.sum(output))
+    # print(output)
+    print("Sum:", np.sum(count_grid))
     print(f"The main loop took {end_time-start_time}.")
