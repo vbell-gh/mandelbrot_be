@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import timeit
 
 from src.schemas import MandelSchema
 from src.mandelbrot import Mandelbrot
@@ -43,6 +44,7 @@ def test_arr():
 
 @app.post("/get_mandelbrot")
 def get_mandelbrot(request_data: MandelSchema):
+    start_time = timeit.default_timer()
 
     try:
         mdlbrt = Mandelbrot()
@@ -52,7 +54,8 @@ def get_mandelbrot(request_data: MandelSchema):
             "real": complex_grid.real.tolist(),
             "imag": complex_grid.imag.tolist(),
         }
-
+        end_time = timeit.default_timer()
+        print(f"Time taken: {end_time - start_time}")
         return {
             "count_grid": count_grid_list,
             "complex_grid": complex_grid,

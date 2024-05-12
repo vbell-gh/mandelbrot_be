@@ -66,28 +66,28 @@ class Mandelbrot:
         for key in plane_limits:
             if key.startswith("x") and aspect_ratio < 1:
                 plane_limits[key] = (
-                    (self.plane_default_limits[key] + mdl_data.central_point.x)
+                    (self.plane_default_limits[key]/ mdl_data.zoom_level + mdl_data.central_point.x)
                     * aspect_ratio
-                    / mdl_data.zoom_level
+                    
                 )
                 continue
             elif key.startswith("x") and aspect_ratio >= 1:
                 plane_limits[key] = (
-                    self.plane_default_limits[key] + mdl_data.central_point.x
-                ) / mdl_data.zoom_level
+                    self.plane_default_limits[key]/ mdl_data.zoom_level + mdl_data.central_point.x
+                ) 
 
                 continue
             elif key.startswith("y") and aspect_ratio > 1:
                 plane_limits[key] = (
-                    (self.plane_default_limits[key] + mdl_data.central_point.y)
+                    (self.plane_default_limits[key]/ mdl_data.zoom_level + mdl_data.central_point.y)
                     / aspect_ratio
-                    / mdl_data.zoom_level
+                    
                 )
                 continue
             elif key.startswith("y") and aspect_ratio <= 1:
                 plane_limits[key] = (
-                    self.plane_default_limits[key] + mdl_data.central_point.y
-                ) / mdl_data.zoom_level
+                    self.plane_default_limits[key] / mdl_data.zoom_level + mdl_data.central_point.y
+                )
                 continue
         return plane_limits
 
@@ -108,8 +108,8 @@ class Mandelbrot:
         max_iter_grid = np.full_like(count_grid, max_iter)
         colors_dic = {}
         np_red = count_grid / max_iter_grid * color_max
-        np_green = (np.sin(count_grid) + 1) / 2 * 255
-        np_blue = np.full_like(count_grid, 100)
+        np_green = (np.cos(count_grid) + 1) / 2 * 255
+        np_blue = (np.sin(count_grid) + 1) / 2 * 255
         colors_dic["red"] = np_red.repeat(pixel_pp, axis=1).astype(int).tolist()
         colors_dic["green"] = np_green.repeat(pixel_pp, axis=1).astype(int).tolist()
         colors_dic["blue"] = np_blue.repeat(pixel_pp, axis=1).astype(int).tolist()
