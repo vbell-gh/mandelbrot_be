@@ -48,18 +48,18 @@ def get_mandelbrot(request_data: MandelSchema):
 
     try:
         mdlbrt = Mandelbrot()
-        count_grid, complex_grid, color_dic = mdlbrt.main_loop(request_data)
+        count_grid, x_line, y_line, color_data = mdlbrt.main_loop(request_data)
         count_grid_list = count_grid.tolist()
         complex_grid = {
-            "real": complex_grid.real.tolist(),
-            "imag": complex_grid.imag.tolist(),
+            "x_line": x_line.tolist(),
+            "y_line": y_line.tolist(),
         }
         end_time = timeit.default_timer()
         print(f"Time taken: {end_time - start_time}")
         return {
             "count_grid": count_grid_list,
             "complex_grid": complex_grid,
-            "color": color_dic,
+            "color": color_data,
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -92,8 +92,8 @@ class Mandelbrot:
         return plane_limits
 
     def colorize(
-        self, count_grid: np.array, max_iter: int, pixel_pp: int
-    ) -> dict[np.array]:
+        self, count_grid: np.array, max_iter: int, pixel_pp: int, is_canvas: bool
+    ):
         """
         Colorizes the Mandelbrot set based on the number of iterations it took for each point to escape.
 
@@ -110,10 +110,20 @@ class Mandelbrot:
         np_red = count_grid / max_iter_grid * color_max
         np_green = (np.cos(count_grid) + 1) / 2 * 255
         np_blue = (np.sin(count_grid) + 1) / 2 * 255
-        colors_dic["red"] = np_red.repeat(pixel_pp, axis=1).astype(int).tolist()
-        colors_dic["green"] = np_green.repeat(pixel_pp, axis=1).astype(int).tolist()
-        colors_dic["blue"] = np_blue.repeat(pixel_pp, axis=1).astype(int).tolist()
-        return colors_dic
+        if is_canvas:
+            gamma = 255
+            np_red = np_red.repeat(pixel_pp, axis=1).astype(int).flatten()
+            np_green = np_green.repeat(pixel_pp, axis=1).astype(int).flatten()
+            np_blue = np_blue.repeat(pixel_pp, axis=1).astype(int).flatten()
+            np_gama = np.full_like(np_red, gamma)
+            new_arr = np.vstack([np_red, np_green, np_blue, np_gama])
+            return new_arr.flatten("F").tolist() 
+        else:
+            colors_dic = {}
+            colors_dic["red"] = np_red.repeat(pixel_pp, axis=1).astype(int).tolist()
+            colors_dic["green"] = np_green.repeat(pixel_pp, axis=1).astype(int).tolist()
+            colors_dic["blue"] = np_blue.repeat(pixel_pp, axis=1).astype(int).tolist()
+            return colors_dic
 
     def main_loop(self, mdl_data: MandelSchema) -> np.array:
         """
@@ -173,13 +183,15 @@ class Mandelbrot:
             )
             count_grid += mask_grid
         # implement np.repeat with pixel_per_point
-        color_dic = self.colorize(
-            count_grid, mdl_data.max_iter, mdl_data.pixel_per_point
+        color_data = self.colorize(
+            count_grid, mdl_data.max_iter, mdl_data.pixel_per_point, mdl_data.is_canvas
         )
+
         return (
             count_grid.repeat(mdl_data.pixel_per_point, axis=1),
-            complex_grid.repeat(mdl_data.pixel_per_point, axis=1),
-            color_dic,
+            x_line,
+            y_line,
+            color_data,
         )
 
 
@@ -187,18 +199,20 @@ if __name__ == "__main__":
     import timeit
 
     sample_request_data = MandelSchema(
-        size=XYpointInt(x=500, y=500),
+        size=XYpointInt(x=10, y=10),
         zoom_level=1,
         pixel_per_point=1,
         central_point=XYpointFloat(x=0.0, y=1.0),
         max_iter=250,
         iteration_limit=2,
+        is_canvas=True,
     )
 
     mdlbrd = Mandelbrot()
     start_time = timeit.default_timer()
-    count_grid, complex_grid, color_dic = mdlbrd.main_loop(mdl_data=sample_request_data)
+    count_grid, x_line, y_line, color_data = mdlbrd.main_loop(mdl_data=sample_request_data)
     end_time = timeit.default_timer()
-    # print(output)
-    print("Sum:", np.sum(count_grid))
+    print(color_data)
+    print(len(color_data))
+    # print("Sum:", np.sum(color_data))
     print(f"The main loop took {end_time-start_time}.")

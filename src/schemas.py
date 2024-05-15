@@ -17,3 +17,4 @@ class MandelSchema(BaseModel):
     central_point: XYpointFloat
     max_iter: int = 200
     iteration_limit: int = 2
+    is_canvas: Optional[bool] = True
