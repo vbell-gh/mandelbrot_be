@@ -21,7 +21,7 @@
                 "python.linting.blackEnabled": true,
                 "python.formatting.provider": "black",
                 "editor.tabSize": 4,
-                "editor.formatOnSave": true
+                "editor.formatOnSave": true,
             }
         }
     }
