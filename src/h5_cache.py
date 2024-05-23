@@ -4,7 +4,7 @@ import timeit
 import numpy as np
 import h5py
 
-from src.schemas import MandelSchema, XYpointFloat, XYpointInt, MandelData
+from src.schemas import MandelRequestSchema, XYpointFloat, XYpointInt, MandelData
 from src.mandelbrot import Mandelbrot
 
 
@@ -15,8 +15,7 @@ class H5Cache:
         self.file_name = file_name
         self.file_path = os.path.join(self.data_folder, self.file_name)
 
-        os.makedirs(self.data_folder, exist_ok=True)
-        self.create_file()
+        self.create_file()  # Create the folder and file if it doesn't exist
 
     def create_cache(self, data: MandelData):
         with h5py.File(self.file_path, "w") as f:
@@ -54,6 +53,7 @@ class H5Cache:
             )
 
     def create_file(self):
+        os.makedirs(self.data_folder, exist_ok=True)
         if not os.path.exists(self.data_folder):
             with h5py.File(self.file_path, "w") as f:
                 pass
@@ -62,7 +62,7 @@ class H5Cache:
 if __name__ == "__main__":
 
     def main():
-        sample_request_data = MandelSchema(
+        sample_request_data = MandelRequestSchema(
             size=XYpointInt(x=5000, y=5000),
             zoom_level=1,
             pixel_per_point=1,
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             x_line=x_line,
             y_line=y_line,
             color_data=color_data,
-            level='1',
+            level="1",
         )
         end_time = timeit.default_timer()
         print(f"The main loop took {end_time-start_time}.")
@@ -92,8 +92,9 @@ if __name__ == "__main__":
         print(f"Cache creation took {end_time-start_time}.")
 
         start_time = timeit.default_timer()
-        data = h5_cache.read_cache(level='1')
+        data = h5_cache.read_cache(level="1")
         end_time = timeit.default_timer()
         print(f"Cache read took {end_time-start_time}.")
         print(data)
+
     main()
