@@ -222,7 +222,7 @@ class Mandelbrot:
         )
         return data
 
-    def mandel_data_from_lines(self, mdl_data: MandelLineSpaceSchema):
+    def mandel_data_from_lines(self, mdl_data: MandelLineSpaceSchema) -> MandelData:
         """
         Generates Mandelbrot data from the given MandelLineSpaceSchema.
 
