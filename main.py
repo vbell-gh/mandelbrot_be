@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import timeit
 
-from src.schemas import MandelSchema
+from src.schemas import MandelRequestSchema
 from src.mandelbrot import Mandelbrot
 
 
@@ -43,7 +43,7 @@ def test_arr():
 
 
 @app.post("/get_mandelbrot")
-def get_mandelbrot(request_data: MandelSchema):
+def get_mandelbrot(request_data: MandelRequestSchema):
     start_time = timeit.default_timer()
 
     try:
