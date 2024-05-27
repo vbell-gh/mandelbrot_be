@@ -23,7 +23,7 @@ Contains the core logic for generating and manipulating Mandelbrot sets.
 There are two main ways to use the codebase:
 
 1. Using the Mandelbrot class without serving the API:
-`python
+```python
 from src.mandelbrot import Mandelbrot
 from src.schemas import MandelLineSpaceSchema
 
@@ -39,9 +39,9 @@ mandelbrot_data = Mandelbrot().mandel_data_from_lines(
 # Access the generated data
 count_grid = mandelbrot_data.count_grid
 color_data = mandelbrot_data.color_data
-`
+```
 2. Serving through the FastAPI server:
-`
+```
 import requests
 
 # Sample Mandelbrot request data
@@ -60,4 +60,4 @@ response_data = response.json()
 # Access the generated data
 count_grid = response_data["count_grid"]
 color_data = response_data["color"]
-`
+```
