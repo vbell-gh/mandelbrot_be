@@ -1,13 +1,16 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 import timeit
 
 from src.schemas import MandelRequestSchema
 from src.mandelbrot import Mandelbrot
 
 
-app = FastAPI()
+app = FastAPI(
+    title="Mandelbrot API",
+    summary="API to generate Mandelbrot set made to work with the mandelsite frontend.",
+    version="0.1",  # Most probably the only version
+)
 origins = ["http://localhost:9000"]
 
 app.add_middleware(
@@ -21,7 +24,7 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {"Test": "Working!"}
 
 
 @app.get("/test_arr")
@@ -38,7 +41,8 @@ def test_arr():
             [0, 0, 1, 2, 3, 200, 1, 1, 1, 0],
             [0, 0, 0, 1, 1, 1, 1, 1, 0, 0],
             [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-        ]
+        ],
+        "description": "This is a sample array to test the API.",
     }
 
 
