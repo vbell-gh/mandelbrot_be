@@ -1,8 +1,8 @@
 import os
-import timeit
 
 import numpy as np
 import h5py
+from tqdm import tqdm
 
 from src.schemas import MandelData, MandelLineSpaceSchema
 from src.mandelbrot import Mandelbrot
@@ -26,16 +26,14 @@ class H5Cache:
         )
         self.level_granularity = 2  # How many times to split the x and y lines
         self.base_name = "0"  # The base name of each level
+        self.keys = []  # The keys of the HDF5 file
 
-    def create_cache(self, data: MandelData):
+    def create_cache(self, data: MandelData) -> None:
         """
         Creates a cache in an HDF5 file for the given MandelData object.
         The data is stored in the HDF5 file under the level of the MandelData object.
         Parameters:
             data (MandelData): The MandelData object containing the data to be cached.
-
-        Returns:
-            None
         """
         with h5py.File(self.file_path, "r+") as f:
             level_group = f.create_group(data.level)
@@ -48,7 +46,7 @@ class H5Cache:
             level_group.create_dataset("green", data=data.color_data["green"])
             level_group.create_dataset("blue", data=data.color_data["blue"])
 
-    def read_cache(self, level: str):
+    def read_cache(self, level: str) -> MandelData:
         """
         Reads the cache data for the specified level.
         Args:
@@ -57,7 +55,6 @@ class H5Cache:
             MandelData: An instance of the MandelData class containing the cache data.
 
         """
-        print(level)
         with h5py.File(self.file_path, "r") as f:
             level_group = f[level]
             count_grid = level_group["count_grid"][:]
@@ -102,17 +99,23 @@ class H5Cache:
         mdlbrt = Mandelbrot()
         mdl_data = mdlbrt.mandel_data_from_lines(starting_linespace)
         mdl_data.level = str(self.base_name)
+        self.keys.append(mdl_data.level)  # Add the first key to the keys list
         self.create_cache(mdl_data)
 
         max_level = self.base_name * self.depth
 
         current_level = self.base_name
         while len(current_level) <= len(max_level):
-
-            for parrent_item in self.get_keys_at_level(current_level):
+            for parrent_item in tqdm(
+                self.keys_at_level_active(current_level),
+                total=len(self.keys_at_level_active(current_level)),
+                desc=f"Generating sublevel {current_level}",
+                bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [Time taken: {elapsed_s} seconds]",
+                ncols=100,
+                ):
                 parrent_mdl_data = self.read_cache(str(parrent_item))
                 self.generate_next_level(parrent_mdl_data)
-
+            # Increase the current level for next iteration
             current_level += self.base_name
 
     def generate_next_level(self, parrent_mdl_data: MandelData) -> None:
@@ -138,7 +141,7 @@ class H5Cache:
         )  # Reverse the y_line to match the coordinate system from left to right, top to bottom
         iter_box = np.arange(self.level_granularity**2).reshape(
             self.level_granularity, -1
-        )  # Creates a 2D array of the iteration box
+        )  # Creates a 2D array of the iteration box This can be moved to the __init__ function
         mdlbrt = Mandelbrot()
         for box_row, y_item in zip(
             iter_box, np.array_split(next_y_line, self.level_granularity)
@@ -146,18 +149,19 @@ class H5Cache:
             for box_item, x_item in zip(
                 box_row, np.array_split(next_x_line, self.level_granularity)
             ):
-                print(box_item, "x:", x_item[0], "y:", y_item[0])
                 mdl_line_space = MandelLineSpaceSchema(
                     x_line=x_item, y_line=y_item[::-1]
                 )
                 mdl_data = mdlbrt.mandel_data_from_lines(mdl_line_space)
                 formated_name = str(box_item).zfill(len(self.base_name))
                 mdl_data.level = f"{parrent_name}{formated_name}"
+                self.keys.append(mdl_data.level)  # Add the key to the keys list
                 self.create_cache(mdl_data)
 
-    def get_keys_at_level(self, level_depth: int):
+    def keys_at_level_from_file(self, level_depth: str):
         """
-        Retrieves the keys at a specific level depth in the HDF5 file.
+        Retrieves the keys at a specific level depth from the HDF5 file.
+        This function enters the file.
 
         Args:
             level_depth (int): The desired level depth.
@@ -170,13 +174,30 @@ class H5Cache:
             keys_l = list(f.keys())
             return [key for key in keys_l if len(key) == required_level_len]
 
+    def keys_at_level_active(self, level_depth: str):
+        """
+        Retrieves the keys at a specific level depth from the HDF5 file.
+        This function DOES NOT enter the file each time, but returns filter from self.
+        Basically filters the keys list from self.keys.
+        Args:
+            level_depth (int): The desired level depth.
+        Returns:
+            list: A list of keys at the specified level depth.
+        """
+        required_level_len = len(level_depth)
+        return [key for key in self.keys if len(key) == required_level_len]
+
     def create_file(self):
         """
         Creates an initial empty HDF5 file at the specified file path when the class is instantiated.
 
         """
         os.makedirs(self.data_folder, exist_ok=True)
-        if not os.path.exists(self.file_path):
+        if os.path.exists(self.file_path):
+            os.remove(self.file_path)
+            with h5py.File(self.file_path, "w") as f:
+                pass
+        else:
             with h5py.File(self.file_path, "w") as f:
                 pass
 
@@ -186,8 +207,8 @@ if __name__ == "__main__":
     def main():
         h5_cache = H5Cache()
         mandel_space = MandelLineSpaceSchema(
-            x_line=np.linspace(-2.5, 2.5, 100), y_line=np.linspace(-1.25, 1.25, 50)
+            x_line=np.linspace(-2.5, 2.5, 2000), y_line=np.linspace(-1.25, 1.25,1000)
         )
-        h5_cache.create_initial_cache(mandel_space, depth=4, level_granularity=2)
+        h5_cache.create_initial_cache(mandel_space, depth=2, level_granularity=2)
 
     main()
