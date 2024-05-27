@@ -1,2 +1,6 @@
 /.venv
-/__pychache__
+/__pycache__/
+*.pyc
+*.png
+/h5data/
+*.hdf5

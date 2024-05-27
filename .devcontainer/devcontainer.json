@@ -1,7 +1,7 @@
 {
     "name": "mandelbrot_be",
     "image": "mcr.microsoft.com/devcontainers/python:3.12",
-    "postCreateCommand": "pip install fastapi uvicorn numpy black",
+    "postCreateCommand": "pip install fastapi uvicorn numpy black pillow h5py",
     "postStartCommand": "uvicorn main:app --reload --port 5000 --log-level debug",
     "forwardPorts": [
         5000
@@ -21,7 +21,7 @@
                 "python.linting.blackEnabled": true,
                 "python.formatting.provider": "black",
                 "editor.tabSize": 4,
-                "editor.formatOnSave": true
+                "editor.formatOnSave": true,
             }
         }
     }
