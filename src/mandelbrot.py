@@ -137,9 +137,9 @@ class Mandelbrot:
             return new_arr.flatten("F").tolist()
         else:
             colors_dic = {}
-            colors_dic["red"] = np_red.repeat(pixel_pp, axis=1).astype(int)
-            colors_dic["green"] = np_green.repeat(pixel_pp, axis=1).astype(int)
-            colors_dic["blue"] = np_blue.repeat(pixel_pp, axis=1).astype(int)
+            colors_dic["red"] = np_red.repeat(pixel_pp, axis=1).astype(np.uint8)
+            colors_dic["green"] = np_green.repeat(pixel_pp, axis=1).astype(np.uint8)
+            colors_dic["blue"] = np_blue.repeat(pixel_pp, axis=1).astype(np.uint8)
             return colors_dic
 
     def main_loop(
@@ -158,31 +158,18 @@ class Mandelbrot:
             MandelData: Object containing the results of the Mandelbrot algorithm.
         """
 
-        complex_grid = np.zeros(
-            (len(y_line), len(x_line)), dtype=complex
-        )  # Create an empty complex grid
-        x_real, y_imag = np.meshgrid(
-            x_line, y_line
-        )  # Create the meshgrid in order to fill in the complex grid
-        complex_grid.real = x_real
-        complex_grid.imag = y_imag
+        complex_grid = x_line + y_line[:, None] * 1j
 
-        mask_grid = np.ones_like(
-            complex_grid, dtype=bool
-        )  # Create a mask grid of the complex plane to follow which elements to do the calculations
-        count_grid = np.zeros_like(
-            complex_grid, dtype=int
-        )  # Keeps count of the operations
-        z_grid = np.zeros_like(
-            complex_grid
-        )  # Z Grid to keep the values of the complex numbers
+        z_grid = np.zeros_like(complex_grid, dtype=np.complex128)
+        count_grid = np.zeros(complex_grid.shape, dtype=np.uint8)
 
-        # The main loop
+        mask_grid = np.ones(complex_grid.shape, dtype=bool)
         for _ in range(max_iter):
-            z_grid[mask_grid] = np.power(z_grid[mask_grid], 2) + complex_grid[mask_grid]
-            mask_grid = np.logical_and(mask_grid, np.abs(z_grid) <= iteration_limit)
+            z_grid[mask_grid] = z_grid[mask_grid] ** 2 + complex_grid[mask_grid]
+            mask_grid = np.abs(z_grid) <= iteration_limit
             count_grid += mask_grid
-
+            if not mask_grid.any():
+                break
         data = MandelData(
             x_line=x_line, y_line=y_line, count_grid=count_grid, color_data=None
         )

@@ -24,11 +24,17 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
+    """
+    Test if the API is working.
+    """
     return {"Test": "Working!"}
 
 
 @app.get("/test_arr")
 def test_arr():
+    """
+    Get a sample array to test the API. 10x10 array with a description.
+    """
     return {
         "sample": [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -48,6 +54,23 @@ def test_arr():
 
 @app.post("/get_mandelbrot")
 def get_mandelbrot(request_data: MandelRequestSchema):
+    """
+    Get the Mandelbrot set data for the given request data.
+
+    - **size**: List of two integers representing the x and y size of the image.
+    - **zoom_level**: Float representing the zoom level of the image.
+    - **pixel_per_point**: Integer representing the number of pixels per point.
+    - **central_point**: List of two floats representing the x and y coordinates of the central point of the image.
+    - **max_iter**: Integer representing the maximum number of iterations. Default is 255.
+    - **iteration_limit**: Integer representing the iteration limit. Default is 2.
+    - **is_canvas**: Boolean indicating if the request is for a canvas. Default is False.
+
+    Returns a dictionary with the following keys:
+    - **count_grid**: A 2D array representing the count grid.
+    - **complex_grid**: A dictionary with keys 'x_line' and 'y_line', each containing a list of floats for which the set was generated.
+    - **color**: A list of colors if is_canvat is set to true, dictionary of red, green and blue if set to false.
+
+    """
     start_time = timeit.default_timer()
 
     try:

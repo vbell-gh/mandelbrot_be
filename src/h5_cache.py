@@ -11,7 +11,7 @@ from src.mandelbrot import Mandelbrot
 class H5Cache:
     def __init__(
         self,
-        data_folder="h5data",
+        data_folder="cache",
         file_name="data.hdf5",
     ) -> None:
         current_dir = os.getcwd()
@@ -209,6 +209,6 @@ if __name__ == "__main__":
         mandel_space = MandelLineSpaceSchema(
             x_line=np.linspace(-2.5, 2.5, 2000), y_line=np.linspace(-1.25, 1.25,1000)
         )
-        h5_cache.create_initial_cache(mandel_space, depth=2, level_granularity=2)
+        h5_cache.create_initial_cache(mandel_space, depth=5, level_granularity=2)
 
     main()
