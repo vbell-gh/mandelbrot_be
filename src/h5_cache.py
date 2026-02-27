@@ -25,8 +25,7 @@ class H5Cache:
             0  # This is the depth of the mandelbrot set used in create_initial_cache()
         )
         self.level_granularity = 2  # How many times to split the x and y lines
-        self.base_name = "0"  # The base name of each level
-        self.keys = []  # The keys of the HDF5 file
+        self.keys = {}  # The keys at a specific level
 
     def create_cache(self, data: MandelData) -> None:
         """
@@ -93,30 +92,29 @@ class H5Cache:
         self.level_granularity = level_granularity
 
         # Create the initial level and the base name for it
-        self.base_name = len(str(level_granularity**2 - 1)) * str(0)
+        # The base name will be zoom_x_y where x and y are the coordinates of the block
+        base_name = "0_0_0"
 
         # Create the initial level
         mdlbrt = Mandelbrot()
         mdl_data = mdlbrt.mandel_data_from_lines(starting_linespace)
-        mdl_data.level = str(self.base_name)
-        self.keys.append(mdl_data.level)  # Add the first key to the keys list
+        mdl_data.level = base_name
         self.create_cache(mdl_data)
+        self.keys[0] = [mdl_data.level]  # Add the key to the keys list
 
-        max_level = self.base_name * self.depth
-
-        current_level = self.base_name
-        while len(current_level) <= len(max_level):
+        current_level = 0  # The starting/current depth level
+        while current_level < depth:
             for parrent_item in tqdm(
-                self.keys_at_level_active(current_level),
-                total=len(self.keys_at_level_active(current_level)),
-                desc=f"Generating sublevel {current_level}",
+                self.keys[current_level],
+                total=len(self.keys[current_level]),
+                desc=f"Generating sublevel {current_level+1}",
                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [Time taken: {elapsed_s} seconds]",
                 ncols=100,
-                ):
-                parrent_mdl_data = self.read_cache(str(parrent_item))
+            ):
+                parrent_mdl_data = self.read_cache(parrent_item)
                 self.generate_next_level(parrent_mdl_data)
-            # Increase the current level for next iteration
-            current_level += self.base_name
+            # Go to the next level
+            current_level += 1
 
     def generate_next_level(self, parrent_mdl_data: MandelData) -> None:
         """
@@ -128,64 +126,66 @@ class H5Cache:
         parent_x_line = parrent_mdl_data.x_line
         parent_y_line = parrent_mdl_data.y_line
         parrent_name = parrent_mdl_data.level
+        parent_depth, parent_x_idx, parent_y_idx = map(int, parrent_name.split("_"))
 
-        next_x_line = np.linspace(
+        current_depth = parent_depth + 1
+        current_x_line = np.linspace(
             parent_x_line[0],
             parent_x_line[-1],
             len(parent_x_line) * self.level_granularity,
         )
-        next_y_line = np.linspace(
+        current_y_line = np.linspace(
             parent_y_line[-1],
             parent_y_line[0],
             len(parent_y_line) * self.level_granularity,
         )  # Reverse the y_line to match the coordinate system from left to right, top to bottom
         iter_box = np.arange(self.level_granularity**2).reshape(
             self.level_granularity, -1
-        )  # Creates a 2D array of the iteration box This can be moved to the __init__ function
+        )  # Creates a 2D array of the iteration box this can be removed
         mdlbrt = Mandelbrot()
+
+        current_y_idx = parent_y_idx * self.level_granularity
         for box_row, y_item in zip(
-            iter_box, np.array_split(next_y_line, self.level_granularity)
+            iter_box, np.array_split(current_y_line, self.level_granularity)
         ):
-            for box_item, x_item in zip(
-                box_row, np.array_split(next_x_line, self.level_granularity)
+
+            current_x_idx = parent_x_idx * self.level_granularity
+            for _, x_item in zip(
+                box_row, np.array_split(current_x_line, self.level_granularity)
             ):
                 mdl_line_space = MandelLineSpaceSchema(
                     x_line=x_item, y_line=y_item[::-1]
                 )
                 mdl_data = mdlbrt.mandel_data_from_lines(mdl_line_space)
-                formated_name = str(box_item).zfill(len(self.base_name))
-                mdl_data.level = f"{parrent_name}{formated_name}"
-                self.keys.append(mdl_data.level)  # Add the key to the keys list
+                mdl_data.level = f"{current_depth}_{current_x_idx}_{current_y_idx}"
+                if current_depth not in self.keys:
+                    self.keys[current_depth] = []
+                self.keys[current_depth].append(mdl_data.level)
+                # Add the key to the keys list
                 self.create_cache(mdl_data)
+                current_x_idx += 1
+            current_y_idx += 1
 
-    def keys_at_level_from_file(self, level_depth: str):
+    def get_keys(self, depth=None):
         """
-        Retrieves the keys at a specific level depth from the HDF5 file.
-        This function enters the file.
-
+        Returns the keys at a specific level depth from the hdf5 file.
+        If depth is None, returns all keys from the file.
         Args:
-            level_depth (int): The desired level depth.
-
+            depth (int): The desired level depth, if None, returns all keys.
         Returns:
-            list: A list of keys at the specified level depth.
+            list: A list of keys from the hdf5 file.
         """
-        required_level_len = len(level_depth)
+        file_keys = []
         with h5py.File(self.file_path, "r") as f:
-            keys_l = list(f.keys())
-            return [key for key in keys_l if len(key) == required_level_len]
-
-    def keys_at_level_active(self, level_depth: str):
-        """
-        Retrieves the keys at a specific level depth from the HDF5 file.
-        This function DOES NOT enter the file each time, but returns filter from self.
-        Basically filters the keys list from self.keys.
-        Args:
-            level_depth (int): The desired level depth.
-        Returns:
-            list: A list of keys at the specified level depth.
-        """
-        required_level_len = len(level_depth)
-        return [key for key in self.keys if len(key) == required_level_len]
+            f.visit(file_keys.append)
+        if depth is not None:
+            filtered_keys = []
+            for key in file_keys:
+                if int(key.split("_")[0]) == depth:
+                    filtered_keys.append(key)
+            return filtered_keys
+        else:
+            return file_keys
 
     def create_file(self):
         """
@@ -206,9 +206,10 @@ if __name__ == "__main__":
 
     def main():
         h5_cache = H5Cache()
-        mandel_space = MandelLineSpaceSchema(
-            x_line=np.linspace(-2.5, 2.5, 2000), y_line=np.linspace(-1.25, 1.25,1000)
-        )
-        h5_cache.create_initial_cache(mandel_space, depth=5, level_granularity=2)
+        # mandel_space = MandelLineSpaceSchema(
+        #     x_line=np.linspace(-2.5, 2.5, 100), y_line=np.linspace(-1.25, 1.25, 50)
+        # )
+        # h5_cache.create_initial_cache(mandel_space, depth=4, level_granularity=2)
+        print(h5_cache.get_keys())
 
     main()

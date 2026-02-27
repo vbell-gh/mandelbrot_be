@@ -71,7 +71,6 @@ def get_mandelbrot(request_data: MandelRequestSchema):
     - **color**: A list of colors if is_canvat is set to true, dictionary of red, green and blue if set to false.
 
     """
-    start_time = timeit.default_timer()
 
     try:
         mdlbrt = Mandelbrot()
@@ -81,8 +80,6 @@ def get_mandelbrot(request_data: MandelRequestSchema):
             "x_line": x_line.tolist(),
             "y_line": y_line.tolist(),
         }
-        end_time = timeit.default_timer()
-        print(f"Time taken: {end_time - start_time}")
         return {
             "count_grid": count_grid_list,
             "complex_grid": complex_grid,

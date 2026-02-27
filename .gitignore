@@ -3,5 +3,5 @@ __pycache__/
 /__pycache__/
 *.pyc
 *.png
-/h5data/
+/cache/
 *.hdf5
